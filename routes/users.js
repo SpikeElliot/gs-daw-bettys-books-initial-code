@@ -1,22 +1,24 @@
-// Create a new router
-const express = require("express")
-const bcrypt = require("bcrypt");
+const express = require('express')
+const bcrypt = require('bcrypt');
 const saltRounds = 10;
 const router = express.Router();
+const { check, validationResult } = require('express-validator');
 
+// Redirect to login page when user not logged in
 const redirectLogin = (req, res, next) => {
     if (!req.session.userId) {
-        res.redirect('./login'); // redirect to login page when user not logged in
+        res.redirect('./login'); 
     } else {
         next(); // move to next middleware function
     }
 }
 
+// Redirect to home page when user logged in
 const redirectHome = (req, res, next) => {
     if (req.session.userId) {
-        res.redirect('/'); // redirect to home page when user logged in
+        res.redirect('/'); 
     } else {
-        next(); // move to next middleware function
+        next();
     }
 }
 
@@ -24,25 +26,44 @@ router.get('/register', redirectHome, function (req, res, next) {
     res.render('register.ejs')  ;                                                             
 })    
 
-router.post('/registered', redirectHome, function (req, res, next) {
-    // saving data in database
+// Create validation chains for register page fields
+registerValidation = [check('email').isEmail().isLength({max: 100}), 
+               check('username').isLength({min: 1, max: 50}),
+               check('password').isLength({min: 8, max: 50}),
+               check('first').isLength({min: 1, max: 50}),
+               check('last').isLength({min: 1, max: 50})]
+
+router.post('/registered', registerValidation, redirectHome, function (req, res, next) {
+    // check validation of fields
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) { // reload the page if any field has an error
+        res.redirect('./register');
+        return;
+    }
+    // save new user data in database
     const plainPassword = req.body.password;
+    // encrypt user's password using bcrypt hashing algorithm
     bcrypt.hash(plainPassword, saltRounds, function (err, hashedPassword) {
         let sqlquery = `INSERT INTO users
                         (username, hashedPassword, firstName, lastName, email) 
                         VALUES (?,?,?,?,?)`
+        // sanitize username, first name, and last name fields
+        req.body.username = req.sanitize(req.body.username);
+        req.body.first = req.sanitize(req.body.first);
+        req.body.last = req.sanitize(req.body.last);
+        // create record for query
         let newrecord = [req.body.username, hashedPassword, req.body.first,
                          req.body.last, req.body.email];
-        db.query(sqlquery, newrecord, (err, result) => {
-            if (err) {
+        db.query(sqlquery, newrecord, (err, result) => { // execute sql query
+            if (err) { // error handling
                 next(err);
+                return;
             }
-            else {
-                result = `Hello ${req.body.first} ${req.body.last} you are now registered!  
-                We will send an email to you at ${req.body.email} Your password is: ${plainPassword} 
-                and your hashed password is: ${hashedPassword}`;
-                res.send(result);
-            }
+            // if no errors, send success message
+            result = `Hello ${req.body.first} ${req.body.last} you are now registered!  
+                      We will send an email to you at ${req.body.email} Your password is: ${plainPassword} 
+                      and your hashed password is: ${hashedPassword}`;
+            res.send(result);
         })
     });                                                                      
 })
@@ -52,46 +73,43 @@ router.get('/login', function (req, res, next) {
 })
 
 router.post('/loggedin', function (req, res, next) {
-    // saving data in database
-    let sqlquery = `SELECT hashedPassword FROM users WHERE username = '${req.body.username}'` // query database to get all the books
-    db.query(sqlquery, (err, result) => {
-        if (err) {
-            next(err);
-        }
-        if (result.length <= 0) {
-            res.send("Error: user not found");
+    // query database to find a username matching the input, and get the hashed password
+    req.body.username = req.sanitize(req.body.username); // sanitize username
+    let sqlquery = `SELECT hashedPassword FROM users WHERE username = '${req.body.username}'`
+    db.query(sqlquery, (err, result) => { // execute sql query
+        // error handling
+        if (err) next(err); // move to next middleware function
+        if (result.length == 0) { // send error message when no match found
+            res.send('Error: user not found');
             return;
-        } 
-        hashedPassword = result[0].hashedPassword;
-        bcrypt.compare(req.body.password, hashedPassword, function(err, result) {
-            if (err) {
-                res.send("Error: user not found");
-            }
-            else if (result) {
+        }
+        // if matching username found in database
+        let hashedPw = result[0].hashedPassword;
+        // compare hashed input to hashed password of user in database
+        bcrypt.compare(req.body.password, hashedPw, function(err, result) {
+            if (err) next(err);
+            if (result) { // passwords match, log user in and redirect to home
                 req.session.userId = req.body.username;
                 res.redirect('/');
-            }
-            else {
-                res.send("Incorrect password");
+            } else { // passwords don't match, send error message
+                res.send('Error: Incorrect password');
             }
         })
     })
 });  
 
 router.get('/logout', redirectLogin, (req,res) => {
+    // destroy current session to log user out
     req.session.destroy(err => {
         return res.redirect('/'); 
     })
 })
 
 router.get('/list', redirectLogin, function (req, res, next) {
-    let sqlquery = "SELECT * FROM users" // query database to get all the books
-    // execute sql query
-    db.query(sqlquery, (err, result) => {
-        if (err) {
-            next(err);
-        }
-        res.render("userlist.ejs", {users:result});
+    let sqlquery = 'SELECT * FROM users' // query database to get all users
+    db.query(sqlquery, (err, result) => { // execute sql query
+        if (err) next(err); // error handling
+        res.render('userlist.ejs', {users:result});
      })
 })
 

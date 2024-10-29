@@ -1,12 +1,18 @@
 // Import express and ejs
-var express = require ('express')
-var ejs = require('ejs')
+const express = require ('express');
+const ejs = require('ejs');
 
 //Import mysql module
-var mysql = require('mysql2')
+const mysql = require('mysql2');
 
 //Import session module
-var session = require('express-session')
+const session = require('express-session');
+
+//Import validator module
+const validator = require('express-validator');
+
+//Import sanitizer module
+const sanitizer = require('express-sanitizer');
 
 // Create the express application object
 const app = express()
@@ -20,6 +26,9 @@ app.use(express.urlencoded({ extended: true }))
 
 // Set up public folder (for css and statis js)
 app.use(express.static(__dirname + '/public'))
+
+// Create an input sanitizer
+app.use(sanitizer());
 
 // Define the database connection
 const db = mysql.createConnection ({
@@ -48,10 +57,10 @@ app.use(session({
 }))
 
 // Define our application-specific data
-app.locals.shopData = {shopName: "Bettys Books"}
+app.locals.shopData = {shopName: 'Bettys Books'}
 
 // Load the route handlers
-const mainRoutes = require("./routes/main")
+const mainRoutes = require('./routes/main')
 app.use('/', mainRoutes)
 
 // Load the route handlers for /users
