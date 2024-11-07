@@ -10,13 +10,13 @@ const redirectLogin = (req, res, next) => {
     }
 }
 
-router.get('/search', redirectLogin, function(req, res, next){
+router.get('/search', redirectLogin, (req, res, next) => {
     res.render('search.ejs');
 })
 
 let searchValidation = [check('search_text').notEmpty()];
 
-router.get('/search_result', searchValidation, redirectLogin, function (req, res, next) {
+router.get('/search_result', searchValidation, redirectLogin, (req, res, next) => {
     // query database to find books containing search term
     let sqlquery = `SELECT * FROM books WHERE name LIKE '%${req.query.search_text}%'`;
     db.query(sqlquery, (err, result) => { // execute sql query
@@ -25,7 +25,7 @@ router.get('/search_result', searchValidation, redirectLogin, function (req, res
      }) 
 })
 
-router.get('/list', redirectLogin, function(req, res, next) {
+router.get('/list', redirectLogin, (req, res, next) => {
     let sqlquery = 'SELECT * FROM books'; // query database to get all the books
     db.query(sqlquery, (err, result) => { // execute sql query
         if (err) next(err); // handle errors
@@ -33,7 +33,7 @@ router.get('/list', redirectLogin, function(req, res, next) {
      })
 })
 
-router.get('/addbook', redirectLogin, function (req, res, next) {
+router.get('/addbook', redirectLogin, (req, res, next) => {
     res.render('addbook.ejs');
 })
 
@@ -41,7 +41,7 @@ router.get('/addbook', redirectLogin, function (req, res, next) {
 bookAddValidation = [check('name').isLength({min: 1, max: 50}),
                      check('price').notEmpty().isCurrency()]
 
-router.post('/bookadded', bookAddValidation, redirectLogin, function (req, res, next) {
+router.post('/bookadded', bookAddValidation, redirectLogin, (req, res, next) => {
     // save book data in database
     let sqlquery = 'INSERT INTO books (name, price) VALUES (?,?)';
     req.body.name = req.sanitize(req.body.name); // sanitize book name
@@ -56,7 +56,7 @@ router.post('/bookadded', bookAddValidation, redirectLogin, function (req, res, 
     })
 }) 
 
-router.get('/bargainbooks', redirectLogin, function(req, res, next) {
+router.get('/bargainbooks', redirectLogin, (req, res, next) => {
     // query database to find books where price is less than 20
     let sqlquery = 'SELECT * FROM books WHERE price < 20';
     db.query(sqlquery, (err, result) => { // execute sql query

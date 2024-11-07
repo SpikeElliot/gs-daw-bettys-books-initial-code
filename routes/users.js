@@ -22,8 +22,8 @@ const redirectHome = (req, res, next) => {
     }
 }
 
-router.get('/register', redirectHome, function (req, res, next) {
-    res.render('register.ejs')  ;                                                             
+router.get('/register', redirectHome, (req, res, next) => {
+    res.render('register.ejs');                                                             
 })    
 
 // Create validation chains for register page fields
@@ -33,7 +33,7 @@ registerValidation = [check('email').isEmail().isLength({max: 100}),
                check('first').isLength({min: 1, max: 50}),
                check('last').isLength({min: 1, max: 50})]
 
-router.post('/registered', registerValidation, redirectHome, function (req, res, next) {
+router.post('/registered', registerValidation, redirectHome, (req, res, next) => {
     // check validation of fields
     const errors = validationResult(req);
     if (!errors.isEmpty()) { // reload the page if any field has an error
@@ -43,7 +43,7 @@ router.post('/registered', registerValidation, redirectHome, function (req, res,
     // save new user data in database
     const plainPassword = req.body.password;
     // encrypt user's password using bcrypt hashing algorithm
-    bcrypt.hash(plainPassword, saltRounds, function (err, hashedPassword) {
+    bcrypt.hash(plainPassword, saltRounds, (err, hashedPassword) => {
         let sqlquery = `INSERT INTO users
                         (username, hashedPassword, firstName, lastName, email) 
                         VALUES (?,?,?,?,?)`
@@ -68,11 +68,11 @@ router.post('/registered', registerValidation, redirectHome, function (req, res,
     });                                                                      
 })
 
-router.get('/login', function (req, res, next) {
+router.get('/login', (req, res, next) => {
     res.render('login.ejs');                                                        
 })
 
-router.post('/loggedin', function (req, res, next) {
+router.post('/loggedin', (req, res, next) => {
     // query database to find a username matching the input, and get the hashed password
     req.body.username = req.sanitize(req.body.username); // sanitize username
     let sqlquery = `SELECT hashedPassword FROM users WHERE username = '${req.body.username}'`
@@ -86,7 +86,7 @@ router.post('/loggedin', function (req, res, next) {
         // if matching username found in database
         let hashedPw = result[0].hashedPassword;
         // compare hashed input to hashed password of user in database
-        bcrypt.compare(req.body.password, hashedPw, function(err, result) {
+        bcrypt.compare(req.body.password, hashedPw, (err, result) => {
             if (err) next(err);
             if (result) { // passwords match, log user in and redirect to home
                 req.session.userId = req.body.username;
@@ -98,14 +98,14 @@ router.post('/loggedin', function (req, res, next) {
     })
 });  
 
-router.get('/logout', redirectLogin, (req,res) => {
+router.get('/logout', redirectLogin, (req, res) => {
     // destroy current session to log user out
     req.session.destroy(err => {
         return res.redirect('/'); 
     })
 })
 
-router.get('/list', redirectLogin, function (req, res, next) {
+router.get('/list', redirectLogin, (req, res, next) => {
     let sqlquery = 'SELECT * FROM users' // query database to get all users
     db.query(sqlquery, (err, result) => { // execute sql query
         if (err) next(err); // error handling
