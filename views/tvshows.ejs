@@ -1,0 +1,15 @@
+<!doctype html>
+<html>
+  <head>
+    <title>List Episodes of TV Shows at <%=shopData.shopName%></title>
+    <link rel='stylesheet'  type='text/css' href='/main.css' />
+  </head>
+  <body>
+    <h1>List Episodes of a TV Show</h1>
+    <form action='/tvshows/search_result' method='GET'>
+      <p>What TV show do you want to search for?</p>
+      <input id='search_box' type='text' name='tvshow'>
+      <input type='submit' value='Search' >
+    </form>
+  </body>
+</html>

@@ -1,0 +1,18 @@
+<!doctype html>
+<html>
+  <head>
+    <title>Episodes for <%=showTitle%></title>
+    <link rel='stylesheet'  type='text/css' href='/main.css' />
+  </head>
+  <body>
+    <h1><%=showTitle%> Episodes</h1>
+    <% episodes.forEach(episode => { %>
+      <h2>S<%=episode.season%> E<%=episode.number%>: <%=episode.name%></h2>
+      <!-- remove HTML formatting from summary text -->
+      <p><b>Summary:</b> <%=episode.summary.substring(3,episode.summary.length-4)%></p>
+      <p><b>Rating:</b> <%=episode.rating.average%></p>
+      <p><b>Runtime:</b> <%=episode.runtime%> mins</p>
+      <p><b>Date aired:</b> <%=episode.airdate%></p>
+    <% }) %>
+  </body>
+</html>
